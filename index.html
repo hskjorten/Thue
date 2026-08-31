@@ -98,23 +98,29 @@
   table{
     width:100%; border-collapse:collapse; background:var(--paper);
     font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
-    font-size:.92rem;
+    font-size:.95rem;
   }
   th, td{
-    text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
-    vertical-align: top;
+    text-align:left; padding:12px 14px; border-bottom:1px solid var(--line);
+    border-right:1px solid #EDE9DB;
+    vertical-align: middle;
   }
+  th:last-child, td:last-child{ border-right:none; }
   th{
-    background: var(--stone-deep); font-weight:600; font-size:.8rem;
-    color:#3a3728;
+    background: var(--stone-deep); font-weight:700; font-size:.78rem;
+    color:#2a2818; letter-spacing:.02em; white-space:nowrap;
   }
+  tr:nth-child(even) td{ background:#FBFAF6; }
   tr:hover td{ background:#F1EFE6; }
   td input, td select, td textarea{
-    font-family: inherit; font-size:.9rem; width:100%; border:1px solid transparent;
-    background:transparent; padding:4px 6px; color:var(--ink);
+    font-family: inherit; font-size:.95rem; width:100%;
+    border:1px solid #DCD6C6; border-radius:3px;
+    background:#fff; padding:7px 8px; color:var(--ink);
+    min-height:34px;
   }
   td input:focus, td select:focus, td textarea:focus{
     border-color:var(--pine-light); background:#fff; outline:none;
+    box-shadow: 0 0 0 2px rgba(52,83,71,.12);
   }
   textarea{ resize:vertical; min-height:34px; }
 
@@ -269,13 +275,13 @@
       <button id="editKpiBtn" style="background:none;border:none;color:var(--pine);text-decoration:underline;cursor:pointer;font-size:inherit;padding:0;">oppdater</button>
     </div>
     <div class="table-wrap">
-      <table>
+      <table style="min-width:1250px">
         <thead>
           <tr>
-            <th style="width:60px">Enhet</th><th>Navn</th><th>Telefon</th><th>E-post</th>
-            <th style="width:110px">Innflytting</th><th style="width:100px">Startleie</th><th style="width:110px">Leie/mnd</th>
-            <th style="width:110px">Siste regulering</th><th style="width:120px">Beregnet leie (KPI)</th>
-            <th style="width:100px">Depositum</th><th style="width:110px">Oppsigelse</th><th style="width:40px"></th>
+            <th style="width:70px">Enhet</th><th style="width:170px">Navn</th><th style="width:140px">Telefon</th><th style="width:200px">E-post</th>
+            <th style="width:130px">Innflytting</th><th style="width:110px">Startleie</th><th style="width:110px">Leie/mnd</th>
+            <th style="width:130px">Siste regulering</th><th style="width:150px">Beregnet leie (KPI)</th>
+            <th style="width:110px">Depositum</th><th style="width:120px">Oppsigelse</th><th style="width:44px"></th>
           </tr>
         </thead>
         <tbody id="tenantsTable"></tbody>
@@ -602,7 +608,7 @@ function renderTenants(){
       const diff = beregnet - aktuell;
       const diffColor = diff > 0 ? "var(--overdue)" : "var(--ok)";
       const diffText = diff > 0 ? `+${diff.toLocaleString("no-NO")} kr` : (diff < 0 ? `${diff.toLocaleString("no-NO")} kr` : "stemmer");
-      beregnetCell = `${beregnet.toLocaleString("no-NO")} kr<br><span style="font-size:.75rem;color:${diffColor}">${diffText}</span>`;
+      beregnetCell = `${beregnet.toLocaleString("no-NO")} kr<br><span style="font-size:.82rem;font-weight:600;color:${diffColor}">${diffText}</span>`;
     }
     tr.innerHTML = `
       <td><select data-f="enhet">${unitOptions}</select></td>
