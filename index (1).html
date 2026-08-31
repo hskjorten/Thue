@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thue · Eiendomsoversikt</title>
+<style>
+  :root{
+    --stone: #EAE6DC;
+    --stone-deep: #DCD6C6;
+    --pine: #223B33;
+    --pine-light: #345347;
+    --clay: #A85C3E;
+    --clay-light: #C97F5C;
+    --ink: #23241F;
+    --paper: #F7F5EF;
+    --line: #C9C2AE;
+    --ok: #4C7A5C;
+    --warn: #A85C3E;
+    --overdue: #A8342A;
+    font-size: 16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--stone);
+    color:var(--ink);
+    font-family: "Iowan Old Style","Palatino Linotype",Georgia,serif;
+    line-height:1.5;
+  }
+  .ui{ font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif; }
+
+  header.top{
+    background:var(--pine);
+    color:var(--paper);
+    padding: 22px 28px 18px;
+    border-bottom: 6px solid var(--clay);
+  }
+  header.top .brand{
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  header.top h1{
+    margin:0; font-size:1.9rem; font-weight:600; letter-spacing:.01em;
+  }
+  header.top .sub{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    color: #C9D8CD; font-size:.85rem;
+  }
+
+  nav.tabs{
+    display:flex; gap:2px; background:var(--pine-light);
+    padding: 0 22px; overflow-x:auto;
+  }
+  nav.tabs button{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    background:transparent; border:none; color:#D8E4DB;
+    padding:12px 16px; font-size:.92rem; cursor:pointer;
+    border-bottom: 3px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button.active{
+    color:#fff; border-bottom-color: var(--clay-light);
+    font-weight:600;
+  }
+  nav.tabs button:hover{ color:#fff; }
+
+  main{ max-width: 1180px; margin: 0 auto; padding: 26px 22px 70px; }
+  section.view{ display:none; }
+  section.view.active{ display:block; }
+
+  h2.section-title{
+    font-size:1.4rem; margin: 0 0 4px;
+  }
+  p.section-note{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    color:#5b5747; font-size:.88rem; margin: 0 0 20px;
+  }
+
+  .grid-cards{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr));
+    gap:14px; margin-bottom: 28px;
+  }
+  .stat-card{
+    background:var(--paper); border:1px solid var(--line);
+    border-left: 5px solid var(--pine);
+    padding:16px 18px;
+  }
+  .stat-card .num{
+    font-size:1.9rem; font-weight:600; font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+  }
+  .stat-card .lbl{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    font-size:.8rem; color:#5b5747; text-transform:none;
+  }
+  .stat-card.warn{ border-left-color: var(--clay); }
+  .stat-card.warn .num{ color: var(--overdue); }
+
+  table{
+    width:100%; border-collapse:collapse; background:var(--paper);
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    font-size:.92rem;
+  }
+  th, td{
+    text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
+    vertical-align: top;
+  }
+  th{
+    background: var(--stone-deep); font-weight:600; font-size:.8rem;
+    color:#3a3728;
+  }
+  tr:hover td{ background:#F1EFE6; }
+  td input, td select, td textarea{
+    font-family: inherit; font-size:.9rem; width:100%; border:1px solid transparent;
+    background:transparent; padding:4px 6px; color:var(--ink);
+  }
+  td input:focus, td select:focus, td textarea:focus{
+    border-color:var(--pine-light); background:#fff; outline:none;
+  }
+  textarea{ resize:vertical; min-height:34px; }
+
+  .status-pill{
+    display:inline-block; padding:3px 10px; font-size:.78rem; border-radius:2px;
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+  }
+  .status-ok{ background:#E1EBE3; color:var(--ok); }
+  .status-warn{ background:#F3E3D9; color:var(--warn); }
+  .status-overdue{ background:#F4DCD9; color:var(--overdue); }
+
+  .toolbar{
+    display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+  }
+  button.action{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    background:var(--pine); color:#fff; border:none; padding:9px 16px;
+    font-size:.86rem; cursor:pointer;
+  }
+  button.action:hover{ background:var(--pine-light); }
+  button.ghost{
+    background:transparent; color:var(--pine); border:1px solid var(--pine);
+  }
+  button.ghost:hover{ background:#E1EBE3; }
+  select.filter{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    padding:8px 10px; border:1px solid var(--line); background:#fff; font-size:.86rem;
+  }
+  .del-btn{
+    background:none; border:none; color:#8a3a30; cursor:pointer; font-size:1rem;
+  }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); }
+
+  .month-selector{
+    display:flex; align-items:center; gap:10px; margin-bottom:16px;
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+  }
+  .month-selector button{
+    background:var(--paper); border:1px solid var(--line); padding:6px 12px; cursor:pointer;
+  }
+  .month-label{ font-family: inherit; font-size:1.1rem; font-weight:600; min-width:160px; text-align:center; }
+
+  .save-flag{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    font-size:.78rem; color:#5b5747; margin-left:auto;
+  }
+
+  footer.foot{
+    text-align:center; padding:20px; font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    font-size:.78rem; color:#8a8570;
+  }
+
+  .sync-card{
+    background:var(--paper); border:1px solid var(--line); border-left:5px solid var(--pine);
+    padding:20px 22px; margin-bottom:18px; max-width:640px;
+  }
+  .sync-card h3{ margin:0 0 10px; font-size:1.1rem; font-family: inherit; }
+  .sync-card p{ font-size:.9rem; color:#4a4735; margin:0 0 10px; }
+  .sync-card ol{ font-size:.88rem; line-height:1.75; padding-left:20px; margin:0 0 14px; color:#3a3728; }
+  .sync-card .mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#F1EFE6;
+    padding:2px 6px; word-break:break-all; font-size:.82rem;
+  }
+  .sync-card input[type=text]{
+    font-family: -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+    padding:9px 10px; border:1px solid var(--line); font-size:.88rem; flex:1; min-width:220px;
+  }
+  .sync-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-top:6px; }
+  .sync-msg{ font-size:.82rem; color:#5b5747; min-height:18px; margin-top:8px; }
+  .sync-warn{
+    background:#F3E3D9; color:#7a3a24; padding:12px 16px; font-size:.85rem;
+    margin-bottom:18px; max-width:640px; border-left:5px solid var(--clay);
+  }
+  .sync-label{
+    display:flex; align-items:center; gap:8px; margin-top:14px; font-size:.88rem; color:var(--ink);
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Thue</h1>
+    <span class="sub">Eiendomsoversikt · Furustubben 9 · 11 · 13 · Harald Skjørten</span>
+  </div>
+</header>
+
+<nav class="tabs ui">
+  <button data-view="dashboard" class="active">Oversikt</button>
+  <button data-view="enheter">Enheter</button>
+  <button data-view="leietakere">Leietakere</button>
+  <button data-view="husleie">Husleie</button>
+  <button data-view="vedlikehold">Vedlikehold</button>
+  <button data-view="synk">Synk</button>
+</nav>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <h2 class="section-title">Oversikt</h2>
+    <p class="section-note">Status for alle 8 enheter på Thue, per i dag.</p>
+    <div class="toolbar">
+      <button class="action" id="exportBtn">Eksporter data (JSON)</button>
+      <button class="ghost action" id="importBtn" style="background:transparent;color:var(--pine);border:1px solid var(--pine);">Importer data (JSON)</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+      <span class="save-flag ui" id="saveFlagExport"></span>
+    </div>
+    <div class="grid-cards ui" id="dashCards"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Enhet</th><th>Adresse</th><th>Leietaker</th><th>Leie/mnd</th><th>Husleiestatus</th></tr>
+        </thead>
+        <tbody id="dashTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ENHETER -->
+  <section class="view" id="view-enheter">
+    <h2 class="section-title">Enhetsregister</h2>
+    <p class="section-note">De 8 enhetene på Thue, med intern nummerering.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Enhet</th><th>Adresse</th><th style="width:70px">Etg</th>
+            <th style="width:90px">Side</th><th style="width:110px">Enhetsnr.</th>
+            <th>Internt nr.</th><th>Merknad</th>
+          </tr>
+        </thead>
+        <tbody id="unitsTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LEIETAKERE -->
+  <section class="view" id="view-leietakere">
+    <h2 class="section-title">Leietakere</h2>
+    <p class="section-note">Kontaktinformasjon og kontraktsvilkår per enhet.</p>
+    <div class="toolbar">
+      <button class="action" id="addTenantBtn">+ Ny leietaker</button>
+      <button class="ghost action" id="dedupeBtn" style="background:transparent;color:var(--pine);border:1px solid var(--pine);">Rydd duplikater</button>
+      <span class="save-flag" id="saveFlagTenants"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Enhet</th><th>Navn</th><th>Telefon</th><th>E-post</th>
+            <th style="width:110px">Innflytting</th><th style="width:100px">Startleie</th><th style="width:110px">Leie/mnd</th>
+            <th style="width:100px">Depositum</th><th style="width:110px">Oppsigelse</th><th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="tenantsTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- HUSLEIE -->
+  <section class="view" id="view-husleie">
+    <h2 class="section-title">Husleieoppfølging</h2>
+    <p class="section-note">Registrer innbetalt leie per enhet og måned. Utestående beløp beregnes automatisk.</p>
+    <div class="month-selector">
+      <button id="prevMonth">‹</button>
+      <div class="month-label ui" id="monthLabel"></div>
+      <button id="nextMonth">›</button>
+      <span class="save-flag ui" id="saveFlagRent"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Enhet</th><th>Leietaker</th><th style="width:110px">Avtalt leie</th>
+            <th style="width:110px">Innbetalt</th><th style="width:110px">Utestående</th>
+            <th style="width:120px">Betalt dato</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="rentTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- VEDLIKEHOLD -->
+  <section class="view" id="view-vedlikehold">
+    <h2 class="section-title">Vedlikeholdslogg</h2>
+    <p class="section-note">Løpende registrering av feil, utbedringer og fysisk tilstand.</p>
+    <div class="toolbar">
+      <button class="action" id="addMaintBtn">+ Ny registrering</button>
+      <select class="filter" id="maintFilter">
+        <option value="">Alle enheter</option>
+      </select>
+      <span class="save-flag ui" id="saveFlagMaint"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:110px">Dato</th><th style="width:60px">Enhet</th><th>Beskrivelse</th>
+            <th style="width:120px">Status</th><th style="width:110px">Kostnad</th><th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="maintTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SYNK -->
+  <section class="view" id="view-synk">
+    <h2 class="section-title">Synkronisering</h2>
+    <p class="section-note">Koble til din egen Dropbox, så holder telefon og PC seg automatisk like.</p>
+    <div id="syncRoot" class="ui"></div>
+  </section>
+
+</main>
+
+<footer class="foot">Thue eiendomsoversikt · Data lagres lokalt i denne nettleseren (IndexedDB)</footer>
+
+<script>
+// ---------- IndexedDB helper ----------
+const DB_NAME = "thue_html_db";
+let dbPromise;
+function openDb(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("kv");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+async function dbGet(key){
+  try{
+    const db = await openDb();
+    return await new Promise(res=>{
+      const tx = db.transaction("kv","readonly").objectStore("kv").get(key);
+      tx.onsuccess = () => res(tx.result !== undefined ? tx.result : null);
+      tx.onerror = () => res(null);
+    });
+  }catch(e){ return null; }
+}
+async function dbSet(key, value){
+  try{
+    const db = await openDb();
+    await new Promise(res=>{
+      const tx = db.transaction("kv","readwrite").objectStore("kv").put(value, key);
+      tx.onsuccess = () => res();
+      tx.onerror = () => res();
+    });
+  }catch(e){}
+}
+function flash(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = "Lagret " + new Date().toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"});
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.textContent=""; }, 3000);
+}
+
+// ---------- Default data (Thue) ----------
+const DEFAULT_UNITS = [
+  {enhet:1, adresse:"Furustubben 11", etg:"1", side:"Venstre", enhetsnr:"H101", internt:"FV 11 NR 1", merknad:""},
+  {enhet:2, adresse:"Furustubben 11", etg:"1", side:"Høyre",   enhetsnr:"H102", internt:"FV 11 NR 2", merknad:""},
+  {enhet:3, adresse:"Furustubben 11", etg:"2", side:"Høyre",   enhetsnr:"H201", internt:"FV 11 NR 3", merknad:"2 soverom, stue, kjøkken, bad, bod, terrasse"},
+  {enhet:4, adresse:"Furustubben 13", etg:"1", side:"Venstre", enhetsnr:"H101", internt:"FV13 NR 1", merknad:""},
+  {enhet:5, adresse:"Furustubben 13", etg:"2", side:"Venstre", enhetsnr:"H201", internt:"FV13 NR 2", merknad:""},
+  {enhet:6, adresse:"Furustubben 9",  etg:"1", side:"Høyre",   enhetsnr:"H102", internt:"FV 9 NR 2", merknad:""},
+  {enhet:7, adresse:"Furustubben 9",  etg:"1", side:"Venstre", enhetsnr:"H101", internt:"FV 9 NR 1", merknad:""},
+  {enhet:8, adresse:"Furustubben 9",  etg:"U", side:"Venstre", enhetsnr:"U101", internt:"FV 9 NR 3", merknad:"Kjeller"},
+];
+
+// OBS: Bevisst tom. Denne filen lastes opp til et offentlig GitHub-repo,
+// og skal derfor ALDRI inneholde leietakeres navn, kontaktinfo eller beløp i klartekst.
+// Ekte data hentes inn via "Hent fra Dropbox" i Synk-fanen (privat), eller import av JSON-backup.
+const DEFAULT_TENANTS = [];
+
+const DEFAULT_MAINT = [];
+
+// Øk denne hver gang DEFAULT_UNITS/DEFAULT_TENANTS/DEFAULT_MAINT endres i en oppdatering,
+// slik at endringer slår gjennom hos brukere som allerede har lagrede data i nettleseren.
+const DATA_VERSION = 3;
+
+function mergeById(stored, defaults){
+  const list = Array.isArray(stored) ? stored.slice() : [];
+  defaults.forEach(def => {
+    const idx = list.findIndex(x => x.id === def.id);
+    if(idx >= 0) list[idx] = Object.assign({}, list[idx], def);
+    else list.push(JSON.parse(JSON.stringify(def)));
+  });
+  return list;
+}
+function mergeUnits(stored, defaults){
+  const list = Array.isArray(stored) ? stored.slice() : [];
+  defaults.forEach(def => {
+    const idx = list.findIndex(x => x.enhet === def.enhet);
+    if(idx >= 0) list[idx] = Object.assign({}, list[idx], def);
+    else list.push(JSON.parse(JSON.stringify(def)));
+  });
+  return list;
+}
+function dedupeTenantsByUnit(list, defaultIds){
+  const byUnit = {};
+  list.forEach(t=>{
+    const key = t.enhet;
+    if(!(key in byUnit)){ byUnit[key] = t; return; }
+    const existing = byUnit[key];
+    const existingIsDefault = defaultIds.has(existing.id);
+    const currentIsDefault = defaultIds.has(t.id);
+    if(currentIsDefault && !existingIsDefault){
+      byUnit[key] = t;
+    } else if(currentIsDefault === existingIsDefault){
+      const score = o => Object.values(o).filter(v=>v!==""&&v!==0&&v!=null).length;
+      if(score(t) > score(existing)) byUnit[key] = t;
+    }
+  });
+  return Object.values(byUnit);
+}
+let units = [];
+let tenants = [];
+let maint = [];
+let rentData = {}; // key "YYYY-MM" -> { enhet: {paid, date} }
+let currentMonth = new Date(); currentMonth.setDate(1);
+
+function monthKey(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); }
+function monthLabel(d){
+  return d.toLocaleDateString("no-NO", {month:"long", year:"numeric"}).replace(/^./, c=>c.toUpperCase());
+}
+
+async function loadAll(){
+  const storedVersion = (await dbGet("dataVersion")) || 0;
+  const storedUnits   = await dbGet("units");
+  const storedTenants = await dbGet("tenants");
+  const storedMaint   = await dbGet("maint");
+
+  if(storedVersion < DATA_VERSION){
+    units   = mergeUnits(storedUnits, DEFAULT_UNITS);
+    tenants = mergeById(storedTenants, DEFAULT_TENANTS);
+    tenants = dedupeTenantsByUnit(tenants, new Set(DEFAULT_TENANTS.map(t=>t.id)));
+    maint   = mergeById((storedMaint||[]).map((m,i)=>({...m,id:m.id||("m"+i)})), DEFAULT_MAINT.map((m,i)=>({...m,id:"seed"+i})));
+    await dbSet("units", units);
+    await dbSet("tenants", tenants);
+    await dbSet("maint", maint);
+    await dbSet("dataVersion", DATA_VERSION);
+  } else {
+    units   = storedUnits   ?? JSON.parse(JSON.stringify(DEFAULT_UNITS));
+    tenants = storedTenants ?? JSON.parse(JSON.stringify(DEFAULT_TENANTS));
+    maint   = storedMaint   ?? JSON.parse(JSON.stringify(DEFAULT_MAINT));
+  }
+  rentData = (await dbGet("rentData")) ?? {};
+}
+async function saveUnits(){ await dbSet("units", units); onLocalChange(); }
+async function saveTenants(){ await dbSet("tenants", tenants); flash("saveFlagTenants"); renderDashboard(); onLocalChange(); }
+async function saveMaint(){ await dbSet("maint", maint); flash("saveFlagMaint"); onLocalChange(); }
+async function saveRent(){ await dbSet("rentData", rentData); flash("saveFlagRent"); renderDashboard(); onLocalChange(); }
+
+function tenantForUnit(enhetNr){
+  return tenants.find(t => t.enhet === enhetNr);
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll("nav.tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll("section.view").forEach(v=>v.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("view-"+btn.dataset.view).classList.add("active");
+    if(btn.dataset.view === "dashboard") renderDashboard();
+    if(btn.dataset.view === "husleie") renderRent();
+    if(btn.dataset.view === "synk") renderSync();
+  });
+});
+
+// ---------- Render: Enheter ----------
+function renderUnits(){
+  const tbody = document.getElementById("unitsTable");
+  tbody.innerHTML = "";
+  units.slice().sort((a,b)=>a.enhet-b.enhet).forEach(u=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.enhet}</td>
+      <td><input value="${u.adresse}" data-f="adresse"></td>
+      <td><input value="${u.etg}" data-f="etg"></td>
+      <td><input value="${u.side}" data-f="side"></td>
+      <td><input value="${u.enhetsnr}" data-f="enhetsnr"></td>
+      <td><input value="${u.internt}" data-f="internt"></td>
+      <td><input value="${u.merknad||""}" data-f="merknad"></td>
+    `;
+    tr.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        u[inp.dataset.f] = inp.value;
+        saveUnits();
+        renderDashboard();
+      });
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- Render: Leietakere ----------
+function renderTenants(){
+  const tbody = document.getElementById("tenantsTable");
+  tbody.innerHTML = "";
+  tenants.forEach(t=>{
+    const tr = document.createElement("tr");
+    const unitOptions = units.slice().sort((a,b)=>a.enhet-b.enhet)
+      .map(u=>`<option value="${u.enhet}" ${u.enhet===t.enhet?"selected":""}>${u.enhet} — ${u.adresse}</option>`).join("");
+    tr.innerHTML = `
+      <td><select data-f="enhet">${unitOptions}</select></td>
+      <td><input value="${t.navn}" data-f="navn"></td>
+      <td><input value="${t.telefon||""}" data-f="telefon"></td>
+      <td><input value="${t.epost||""}" data-f="epost"></td>
+      <td><input type="date" value="${t.innflytting||""}" data-f="innflytting"></td>
+      <td><input type="number" value="${t.startleie ?? t.leie ?? 0}" data-f="startleie"></td>
+      <td><input type="number" value="${t.leie||0}" data-f="leie"></td>
+      <td><input type="number" value="${t.depositum||0}" data-f="depositum"></td>
+      <td><input value="${t.oppsigelse||""}" data-f="oppsigelse"></td>
+      <td><button class="del-btn" title="Slett">✕</button></td>
+    `;
+    tr.querySelectorAll("input,select").forEach(el=>{
+      el.addEventListener("change", ()=>{
+        const f = el.dataset.f;
+        t[f] = (el.type === "number" || f==="enhet") ? Number(el.value) : el.value;
+        saveTenants();
+      });
+    });
+    tr.querySelector(".del-btn").addEventListener("click", ()=>{
+      if(confirm(`Slette leietaker ${t.navn}?`)){
+        tenants = tenants.filter(x=>x.id!==t.id);
+        saveTenants();
+        renderTenants();
+      }
+    });
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById("addTenantBtn").addEventListener("click", ()=>{
+  tenants.push({id:"t"+Date.now(), enhet:units[0].enhet, navn:"Ny leietaker", telefon:"", epost:"", innflytting:"", leie:0, startleie:0, depositum:0, oppsigelse:"3 måneder"});
+  saveTenants();
+  renderTenants();
+});
+document.getElementById("dedupeBtn").addEventListener("click", ()=>{
+  const before = tenants.length;
+  tenants = dedupeTenantsByUnit(tenants, new Set(DEFAULT_TENANTS.map(t=>t.id)));
+  const removed = before - tenants.length;
+  saveTenants();
+  renderTenants();
+  alert(removed > 0 ? `Fjernet ${removed} duplikat(er).` : "Ingen duplikater funnet.");
+});
+
+// ---------- Render: Husleie ----------
+function renderRent(){
+  document.getElementById("monthLabel").textContent = monthLabel(currentMonth);
+  const key = monthKey(currentMonth);
+  if(!rentData[key]) rentData[key] = {};
+  const tbody = document.getElementById("rentTable");
+  tbody.innerHTML = "";
+  units.slice().sort((a,b)=>a.enhet-b.enhet).forEach(u=>{
+    const t = tenantForUnit(u.enhet);
+    const rec = rentData[key][u.enhet] || {paid:0, date:""};
+    const avtalt = t ? (t.leie||0) : 0;
+    const outstanding = avtalt - (rec.paid||0);
+    let statusClass="status-ok", statusText="Betalt";
+    if(!t){ statusClass="status-ok"; statusText="Ubebodd"; }
+    else if(outstanding > 0 && rec.paid===0){ statusClass="status-overdue"; statusText="Ikke betalt"; }
+    else if(outstanding > 0){ statusClass="status-warn"; statusText="Delvis betalt"; }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.enhet}</td>
+      <td>${t ? t.navn : "—"}</td>
+      <td>${avtalt.toLocaleString("no-NO")} kr</td>
+      <td><input type="number" value="${rec.paid||0}" data-f="paid" ${t?"":"disabled"}></td>
+      <td>${outstanding > 0 ? outstanding.toLocaleString("no-NO")+" kr" : "0 kr"}</td>
+      <td><input type="date" value="${rec.date||""}" data-f="date" ${t?"":"disabled"}></td>
+      <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+    `;
+    tr.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        if(!rentData[key][u.enhet]) rentData[key][u.enhet] = {paid:0, date:""};
+        const f = inp.dataset.f;
+        rentData[key][u.enhet][f] = (f==="paid") ? Number(inp.value) : inp.value;
+        saveRent();
+        renderRent();
+      });
+    });
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById("prevMonth").addEventListener("click", ()=>{
+  currentMonth.setMonth(currentMonth.getMonth()-1); renderRent();
+});
+document.getElementById("nextMonth").addEventListener("click", ()=>{
+  currentMonth.setMonth(currentMonth.getMonth()+1); renderRent();
+});
+
+// ---------- Render: Vedlikehold ----------
+function renderMaintFilter(){
+  const sel = document.getElementById("maintFilter");
+  sel.innerHTML = `<option value="">Alle enheter</option>` +
+    units.slice().sort((a,b)=>a.enhet-b.enhet).map(u=>`<option value="${u.enhet}">${u.enhet} — ${u.adresse}</option>`).join("");
+}
+function renderMaint(){
+  const filterVal = document.getElementById("maintFilter").value;
+  const tbody = document.getElementById("maintTable");
+  tbody.innerHTML = "";
+  const rows = maint
+    .filter(m => !filterVal || String(m.enhet) === filterVal)
+    .sort((a,b)=> (b.dato||"").localeCompare(a.dato||""));
+  rows.forEach(m=>{
+    const tr = document.createElement("tr");
+    const unitOptions = units.slice().sort((a,b)=>a.enhet-b.enhet)
+      .map(u=>`<option value="${u.enhet}" ${u.enhet===m.enhet?"selected":""}>${u.enhet}</option>`).join("");
+    tr.innerHTML = `
+      <td><input type="date" value="${m.dato||""}" data-f="dato"></td>
+      <td><select data-f="enhet">${unitOptions}</select></td>
+      <td><textarea data-f="beskrivelse">${m.beskrivelse||""}</textarea></td>
+      <td>
+        <select data-f="status">
+          <option value="Meldt" ${m.status==="Meldt"?"selected":""}>Meldt</option>
+          <option value="Under arbeid" ${m.status==="Under arbeid"?"selected":""}>Under arbeid</option>
+          <option value="Utført" ${m.status==="Utført"?"selected":""}>Utført</option>
+        </select>
+      </td>
+      <td><input type="number" value="${m.kostnad||0}" data-f="kostnad"></td>
+      <td><button class="del-btn" title="Slett">✕</button></td>
+    `;
+    tr.querySelectorAll("input,select,textarea").forEach(el=>{
+      el.addEventListener("change", ()=>{
+        const f = el.dataset.f;
+        m[f] = (f==="enhet"||f==="kostnad") ? Number(el.value) : el.value;
+        saveMaint();
+      });
+    });
+    tr.querySelector(".del-btn").addEventListener("click", ()=>{
+      maint = maint.filter(x=>x!==m);
+      saveMaint();
+      renderMaint();
+    });
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById("addMaintBtn").addEventListener("click", ()=>{
+  maint.push({dato: new Date().toISOString().slice(0,10), enhet: units[0].enhet, beskrivelse:"", status:"Meldt", kostnad:0});
+  saveMaint();
+  renderMaint();
+});
+document.getElementById("maintFilter").addEventListener("change", renderMaint);
+
+// ---------- Render: Dashboard ----------
+function renderDashboard(){
+  const totalUnits = units.length;
+  const occupied = units.filter(u=>tenantForUnit(u.enhet)).length;
+  const key = monthKey(currentMonth);
+  const monthRec = rentData[key] || {};
+  let totalDue = 0, totalPaid = 0;
+  units.forEach(u=>{
+    const t = tenantForUnit(u.enhet);
+    if(t){
+      totalDue += t.leie||0;
+      totalPaid += (monthRec[u.enhet]?.paid) || 0;
+    }
+  });
+  const outstanding = totalDue - totalPaid;
+
+  document.getElementById("dashCards").innerHTML = `
+    <div class="stat-card"><div class="num">${occupied}/${totalUnits}</div><div class="lbl">Utleide enheter</div></div>
+    <div class="stat-card"><div class="num">${totalDue.toLocaleString("no-NO")} kr</div><div class="lbl">Avtalt leie denne mnd.</div></div>
+    <div class="stat-card ${outstanding>0?'warn':''}"><div class="num">${outstanding.toLocaleString("no-NO")} kr</div><div class="lbl">Utestående denne mnd.</div></div>
+    <div class="stat-card"><div class="num">${maint.filter(m=>m.status!=="Utført").length}</div><div class="lbl">Åpne vedlikeholdssaker</div></div>
+  `;
+
+  const tbody = document.getElementById("dashTable");
+  tbody.innerHTML = "";
+  units.slice().sort((a,b)=>a.enhet-b.enhet).forEach(u=>{
+    const t = tenantForUnit(u.enhet);
+    const rec = monthRec[u.enhet] || {paid:0};
+    const avtalt = t ? (t.leie||0) : 0;
+    const rest = avtalt - (rec.paid||0);
+    let statusClass="status-ok", statusText="Ubebodd";
+    if(t){
+      if(rest>0 && rec.paid===0){ statusClass="status-overdue"; statusText="Ikke betalt"; }
+      else if(rest>0){ statusClass="status-warn"; statusText="Delvis betalt"; }
+      else{ statusClass="status-ok"; statusText="Betalt"; }
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.enhet}</td>
+      <td>${u.adresse}, ${u.etg==="U"?"kjeller":u.etg+". etg"} ${u.side.toLowerCase()}</td>
+      <td>${t ? t.navn : "—"}</td>
+      <td>${t ? avtalt.toLocaleString("no-NO")+" kr" : "—"}</td>
+      <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- Dropbox-synkronisering (OAuth 2.0 PKCE) ----------
+let dbx = null;           // {appKey, access, refresh, exp, lastSync, email, name}
+let autoSync = true;
+let suppressSync = false;
+let localUpdatedAt = 0;
+let pushTimer = null;
+const DBX_BACKUP_PATH = "/thue-backup.json";
+const dbxRedirectUri = () => location.origin + location.pathname;
+
+async function loadDbxState(){
+  const r1 = await dbGet("dbx"); dbx = r1 || null;
+  const r2 = await dbGet("dbxAutoSync"); autoSync = (r2 === null) ? true : r2;
+  const r3 = await dbGet("metaUpdatedAt"); localUpdatedAt = r3 || 0;
+}
+const saveDbxState = () => dbSet("dbx", dbx);
+
+function gatherAll(){
+  return { meta:{updatedAt: localUpdatedAt, app:"thue"}, units, tenants, maint, rentData };
+}
+async function applyAllFromRemote(b){
+  suppressSync = true;
+  units = b.units || units;
+  tenants = b.tenants || tenants;
+  maint = b.maint || maint;
+  rentData = b.rentData || rentData;
+  await dbSet("units", units);
+  await dbSet("tenants", tenants);
+  await dbSet("maint", maint);
+  await dbSet("rentData", rentData);
+  localUpdatedAt = (b.meta && b.meta.updatedAt) || Date.now();
+  await dbSet("metaUpdatedAt", localUpdatedAt);
+  renderUnits(); renderTenants(); renderMaintFilter(); renderMaint(); renderRent(); renderDashboard();
+  renderSync();
+  suppressSync = false;
+}
+function onLocalChange(){
+  if(suppressSync) return;
+  localUpdatedAt = Date.now();
+  dbSet("metaUpdatedAt", localUpdatedAt);
+  if(dbx && dbx.access && autoSync) schedulePush();
+}
+function schedulePush(){
+  clearTimeout(pushTimer);
+  setSyncMsg("Endringer registrert – synker snart …");
+  pushTimer = setTimeout(()=>syncPush(), 4000);
+}
+function setSyncMsg(t){ const e = document.getElementById("syncMsg"); if(e) e.textContent = t || ""; }
+
+// --- PKCE ---
+async function pkceGenerate(){
+  const a = new Uint8Array(64); crypto.getRandomValues(a);
+  const verifier = [...a].map(b=>("0"+b.toString(16)).slice(-2)).join("").slice(0,96);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return {verifier, challenge};
+}
+async function dbxConnect(){
+  const keyInput = document.getElementById("dbxKey");
+  const key = keyInput ? keyInput.value.trim() : "";
+  if(!key){ alert("Lim inn App key fra Dropbox først."); return; }
+  const {verifier, challenge} = await pkceGenerate();
+  await dbSet("dbxPending", {key, verifier, redirect: dbxRedirectUri()});
+  const u = new URL("https://www.dropbox.com/oauth2/authorize");
+  u.searchParams.set("client_id", key);
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("code_challenge", challenge);
+  u.searchParams.set("code_challenge_method", "S256");
+  u.searchParams.set("token_access_type", "offline");
+  u.searchParams.set("redirect_uri", dbxRedirectUri());
+  location.href = u.toString();
+}
+async function dbxCompleteOAuth(){
+  const code = new URLSearchParams(location.search).get("code");
+  if(!code) return;
+  const pend = await dbGet("dbxPending");
+  if(!pend){ history.replaceState({}, "", dbxRedirectUri()); return; }
+  try{
+    const res = await fetch("https://api.dropboxapi.com/oauth2/token", {
+      method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"},
+      body:new URLSearchParams({grant_type:"authorization_code", code, code_verifier:pend.verifier, client_id:pend.key, redirect_uri:pend.redirect})
+    });
+    const j = await res.json();
+    if(j.access_token){
+      dbx = {appKey:pend.key, access:j.access_token, refresh:j.refresh_token, exp:Date.now()+(j.expires_in||14400)*1000, lastSync:0};
+      await saveDbxState();
+      await dbSet("dbxPending", null);
+      await dbxFetchAccount();
+    } else {
+      alert("Tilkobling feilet: " + (j.error_description || j.error || "ukjent feil"));
+    }
+  }catch(e){
+    alert("Tilkobling feilet: " + e.message);
+  }
+  history.replaceState({}, "", dbxRedirectUri());
+}
+async function dbxEnsureToken(){
+  if(!dbx || !dbx.refresh) return;
+  if(dbx.exp && Date.now() < dbx.exp - 60000) return;
+  const res = await fetch("https://api.dropboxapi.com/oauth2/token", {
+    method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:new URLSearchParams({grant_type:"refresh_token", refresh_token:dbx.refresh, client_id:dbx.appKey})
+  });
+  const j = await res.json();
+  if(j.access_token){ dbx.access = j.access_token; dbx.exp = Date.now()+(j.expires_in||14400)*1000; await saveDbxState(); }
+  else throw new Error("kunne ikke fornye tilgang – koble til på nytt");
+}
+async function dbxFetchAccount(){
+  try{
+    const res = await fetch("https://api.dropboxapi.com/2/users/get_current_account", {method:"POST", headers:{Authorization:"Bearer "+dbx.access}});
+    if(res.ok){ const j = await res.json(); dbx.email = j.email; dbx.name = j.name && j.name.display_name; await saveDbxState(); }
+  }catch(e){}
+  renderSync();
+}
+async function dbxUpload(body){
+  const res = await fetch("https://content.dropboxapi.com/2/files/upload", {
+    method:"POST",
+    headers:{Authorization:"Bearer "+dbx.access, "Dropbox-API-Arg":JSON.stringify({path:DBX_BACKUP_PATH, mode:"overwrite", mute:true}), "Content-Type":"application/octet-stream"},
+    body
+  });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+}
+async function dbxDownload(){
+  const res = await fetch("https://content.dropboxapi.com/2/files/download", {
+    method:"POST",
+    headers:{Authorization:"Bearer "+dbx.access, "Dropbox-API-Arg":JSON.stringify({path:DBX_BACKUP_PATH})}
+  });
+  if(res.status === 409) return null; // fil finnes ikke ennå
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  return await res.text();
+}
+async function syncPush(){
+  if(!dbx || !dbx.access) return;
+  try{
+    setSyncMsg("Laster opp …");
+    await dbxEnsureToken();
+    await dbxUpload(JSON.stringify(gatherAll()));
+    dbx.lastSync = Date.now();
+    await saveDbxState();
+    setSyncMsg("Synkronisert ✓");
+    renderSync();
+  }catch(e){ setSyncMsg("Opplasting feilet: " + (e.message||e)); }
+}
+async function syncPull(auto){
+  if(!dbx || !dbx.access) return;
+  try{
+    setSyncMsg("Henter …");
+    await dbxEnsureToken();
+    const txt = await dbxDownload();
+    if(!txt){
+      if(auto){ await syncPush(); } else { setSyncMsg("Fant ingen fil i Dropbox ennå – trykk «Synk nå» for å laste opp."); }
+      return;
+    }
+    const remote = JSON.parse(txt);
+    const remoteUpdated = (remote.meta && remote.meta.updatedAt) || 0;
+    if(auto && remoteUpdated <= localUpdatedAt){ setSyncMsg("Lokal versjon er nyeste – ingenting å hente"); renderSync(); return; }
+    if(!auto && !confirm("Hente data fra Dropbox? Dette overskriver det som ligger lokalt på denne enheten.")){ setSyncMsg(""); return; }
+    await applyAllFromRemote(remote);
+    dbx.lastSync = Date.now();
+    await saveDbxState();
+    setSyncMsg("Hentet fra Dropbox ✓");
+  }catch(e){ setSyncMsg("Henting feilet: " + (e.message||e)); }
+}
+function dbxDisconnect(){
+  if(!confirm("Koble fra Dropbox? Data blir liggende i Dropbox-mappen, men denne enheten slutter å synke automatisk.")) return;
+  dbx = null;
+  saveDbxState();
+  renderSync();
+}
+
+function renderSync(){
+  const root = document.getElementById("syncRoot");
+  if(!root) return;
+  const isFileProto = location.protocol === "file:";
+  const connected = dbx && dbx.access;
+  let h = "";
+
+  if(isFileProto){
+    h += `<div class="sync-warn">Dropbox-synk krever at siden åpnes via en nettadresse (http/https) — ikke som en lokal fil. Legg filen ut på et nettsted (f.eks. en enkel gratis hosting-tjeneste) for at tilkoblingen skal fungere.</div>`;
+  }
+
+  if(connected){
+    h += `<div class="sync-card">
+      <h3>Tilkoblet Dropbox</h3>
+      <p>Konto: <strong>${dbx.email || dbx.name || "ukjent"}</strong></p>
+      <p style="margin-top:-4px">Sist synkronisert: ${dbx.lastSync ? new Date(dbx.lastSync).toLocaleString("no-NO") : "aldri"}</p>
+      <div class="sync-row">
+        <button class="action" id="btnSyncPush">Synk nå</button>
+        <button class="action ghost" id="btnSyncPull">Hent fra Dropbox</button>
+        <button class="action ghost" id="btnSyncDisc">Koble fra</button>
+      </div>
+      <label class="sync-label"><input type="checkbox" id="autoSyncChk" ${autoSync?"checked":""}> Synk automatisk ved endringer</label>
+      <div class="sync-msg" id="syncMsg"></div>
+    </div>`;
+  } else {
+    h += `<div class="sync-card">
+      <h3>Koble til Dropbox</h3>
+      <p>Appen kobler seg til din egen Dropbox og lagrer én fil der (${DBX_BACKUP_PATH}) med alt innhold. Engangsoppsett:</p>
+      <ol>
+        <li>Gå til <span class="mono">dropbox.com/developers/apps</span> → <strong>Create app</strong>.</li>
+        <li>Velg <strong>Scoped access</strong> → <strong>App folder</strong>, gi den navnet «Thue».</li>
+        <li>Fanen <strong>Permissions</strong>: huk av <span class="mono">files.content.write</span> og <span class="mono">files.content.read</span>, trykk Submit.</li>
+        <li>Fanen <strong>Settings → Redirect URIs</strong>: lim inn nøyaktig denne adressen og trykk Add:<br>
+          <span class="mono">${dbxRedirectUri()}</span></li>
+        <li>Kopier <strong>App key</strong> (på Settings-fanen) og lim inn under:</li>
+      </ol>
+      <div class="sync-row">
+        <input type="text" id="dbxKey" placeholder="f.eks. ab12cd34ef56gh7">
+        <button class="action" id="btnDbxConnect">Koble til</button>
+      </div>
+    </div>`;
+  }
+
+  h += `<div class="sync-card">
+    <h3>Lokal sikkerhetskopi (uten Dropbox)</h3>
+    <p>Fungerer uansett, også uten nettadresse eller Dropbox-konto.</p>
+    <div class="sync-row">
+      <button class="action ghost" id="btnLocalExport">Eksporter data (JSON)</button>
+      <button class="action ghost" id="btnLocalImport">Importer data (JSON)</button>
+      <input type="file" id="synkImportFile" accept="application/json" style="display:none">
+    </div>
+  </div>`;
+
+  root.innerHTML = h;
+
+  if(connected){
+    document.getElementById("btnSyncPush").addEventListener("click", syncPush);
+    document.getElementById("btnSyncPull").addEventListener("click", ()=>syncPull(false));
+    document.getElementById("btnSyncDisc").addEventListener("click", dbxDisconnect);
+    document.getElementById("autoSyncChk").addEventListener("change", (e)=>{ autoSync = e.target.checked; dbSet("dbxAutoSync", autoSync); });
+  } else {
+    const btn = document.getElementById("btnDbxConnect");
+    if(btn) btn.addEventListener("click", dbxConnect);
+  }
+  document.getElementById("btnLocalExport").addEventListener("click", exportData);
+  document.getElementById("btnLocalImport").addEventListener("click", ()=> document.getElementById("synkImportFile").click());
+  document.getElementById("synkImportFile").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if(file) importData(file);
+    e.target.value = "";
+  });
+}
+
+// ---------- Eksport / import (JSON-backup for bruk på tvers av nettlesere) ----------
+function exportData(){
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    dataVersion: DATA_VERSION,
+    units, tenants, maint, rentData
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `thue-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  flash("saveFlagExport");
+}
+
+async function importData(file){
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if(!data || !Array.isArray(data.tenants) || !Array.isArray(data.units)){
+      alert("Fant ikke gjenkjennelig Thue-data i denne filen.");
+      return;
+    }
+    const ok = confirm(
+      "Dette erstatter all data i denne nettleseren (enheter, leietakere, husleie, vedlikehold) " +
+      "med innholdet i filen" + (data.exportedAt ? " (eksportert " + new Date(data.exportedAt).toLocaleString("no-NO") + ")" : "") +
+      ".\n\nFortsette?"
+    );
+    if(!ok) return;
+
+    units = data.units;
+    tenants = data.tenants;
+    maint = Array.isArray(data.maint) ? data.maint : [];
+    rentData = data.rentData && typeof data.rentData === "object" ? data.rentData : {};
+
+    await dbSet("units", units);
+    await dbSet("tenants", tenants);
+    await dbSet("maint", maint);
+    await dbSet("rentData", rentData);
+    await dbSet("dataVersion", DATA_VERSION);
+
+    renderUnits();
+    renderTenants();
+    renderMaintFilter();
+    renderMaint();
+    renderRent();
+    renderDashboard();
+    alert("Data importert.");
+  }catch(e){
+    alert("Kunne ikke lese filen. Sjekk at det er en gyldig Thue-backup (JSON).");
+  }
+}
+
+document.getElementById("exportBtn").addEventListener("click", exportData);
+document.getElementById("importBtn").addEventListener("click", ()=>{
+  document.getElementById("importFile").click();
+});
+document.getElementById("importFile").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(file) importData(file);
+  e.target.value = "";
+});
+
+// ---------- Init ----------
+(async function init(){
+  await loadAll();
+  await loadDbxState();
+  await dbxCompleteOAuth();
+  renderUnits();
+  renderTenants();
+  renderMaintFilter();
+  renderMaint();
+  renderRent();
+  renderDashboard();
+  renderSync();
+  if(dbx && dbx.access) syncPull(true);
+})();
+</script>
+</body>
+</html>
